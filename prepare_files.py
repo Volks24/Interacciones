@@ -4,23 +4,24 @@
 ## Librerias ##
 import argparse
 import sys
+import os
 
 ## Funciones ##
 
 def armar_pdb_out(PDB_Input ,pdb_file,others_pdb):
 
-    PDB_OUT = open('r_{}.pdb'.format(pdb_file), 'w')
+    PDB_OUT = open('{}'.format(pdb_file), 'w')
     
     for lines in PDB_Input:
         if 'ATOM' in (lines[0:4]):
             PDB_OUT.write(lines)
-    PDB_OUT.write('TER\n')
+    #PDB_OUT.write('TER\n')
     if len(others_pdb) > 0:
         for other in others_pdb:
             for lines in PDB_Input:
                 if other in (lines[17:20]):
                     PDB_OUT.write(lines)
-            PDB_OUT.write('TER\n')
+    #        PDB_OUT.write('TER\n')
     PDB_OUT.close()
 
 def armar_ligando_out(PDB_Input,ligand_file_not_H):
@@ -35,7 +36,7 @@ def armar_ligando_out(PDB_Input,ligand_file_not_H):
     ligand_out.close()
 
 
-    
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='genera pdb de receptor y ligando desde pdb')
@@ -58,10 +59,12 @@ if __name__ == '__main__':
     ligand_file_not_H = args.ligand_pdb
 
     ## Open PDB ##
+    pdb_file_original = pdb_file.split('.')[0]+'_All.pdb'
+    os.rename(pdb_file,pdb_file_original)
 
-    PDB_Input =open(pdb_file).readlines()
+    PDB_Input =open(pdb_file_original).readlines()
     
-    armar_pdb_out(PDB_Input,pdb_file.split('.')[0],others_pdb)
+    armar_pdb_out(PDB_Input,pdb_file,others_pdb)
 
     armar_ligando_out(PDB_Input,ligand_file_not_H)
 

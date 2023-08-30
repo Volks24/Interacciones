@@ -1,7 +1,7 @@
 
 
 ### Librerias ###
-
+import dataframe_image as dfi
 from rdkit import Chem
 import pandas as pd
 import numpy as np
@@ -10,7 +10,6 @@ import yaml
 from Bio.PDB import *
 from Bio.SVDSuperimposer import SVDSuperimposer
 import csv
-from PIL import Image, ImageDraw, ImageFont
 import re
 import argparse
 import os
@@ -249,66 +248,50 @@ def center_of_mass(entity, geometric=False):
 
         return [sum(coord_list)/sum(masses) for coord_list in w_pos]
     
-def table_to_jpg(file_name , out_put_name):
+def table_to_jpg(DF , out_put_name):
     
-    with open('Temp/{}'.format(file_name), 'r') as file:
-        reader = csv.reader(file)
-        data = list(reader)
-    # Calcula la anchura y altura de cada celda de la tabla
-    cell_width = 100
-    cell_height = 30
+    if DF.shape[0] < 100:
+                  
+        df_styled = DF.style.background_gradient()
+        dfi.export(df_styled, 'Graficos/{}.jpg'.format(out_put_name))
+    else:
+        # Define el máximo de filas por grupo
+        max_rows_per_group = 100
+        # Calcula el número total de grupos necesarios
+        num_groups = (len(DF) + max_rows_per_group - 1) // max_rows_per_group
 
-    # Tamaño de la imagen
-    Jpg_size_Y = len(data) * cell_height
-    Jpg_size_X = (len(data[0])) * cell_width
+        # Divide el DataFrame en grupos más pequeños
+        
+        for i in range(num_groups):
+            start_idx = i * max_rows_per_group
+            end_idx = (i + 1) * max_rows_per_group
+            df_group = DF.iloc[start_idx:end_idx, :]
+            df_group = df_group.style.background_gradient()
+            dfi.export(df_group, 'Graficos/{}_{}.jpg'.format(out_put_name,i))
 
-    # Crea una nueva imagen con un tamaño suficientemente grande para contener la tabla
-    image = Image.new('RGB', (Jpg_size_X, Jpg_size_Y), color=(255, 255, 255))
-    draw = ImageDraw.Draw(image)
-
-    # Selecciona la fuente y el tamaño del texto
-    font = ImageFont.truetype('arial.ttf', 15)
-
-
-    # Dibuja las líneas de la tabla
-    for i in range(len(data)):
-        for j in range(1,len(data[i])):
-            x1 = j * cell_width
-            y1 = i * cell_height
-            x2 = x1 + cell_width
-            y2 = y1 + cell_height
-            if i == 0:
-                draw.rectangle((x1, y1, x2, y2),fill=(115, 147, 179), outline=(0, 0, 0))
-            
-            elif (len((data[i])) > 9) and ('Si' == (data[i][9])):
-                draw.rectangle((x1, y1, x2, y2),fill=(225, 255, 133), outline=(0, 0, 0))
-            else:
-                draw.rectangle((x1, y1, x2, y2),outline=(0, 0, 0))
-    
-    # Escribe el texto en cada celda    
-    for i in range(len(data)):
-        for j in range(1,len(data[i])):
-            x = j * cell_width + 5
-            y = i * cell_height + 5
-            draw.text((x, y), data[i][j], font=font, fill=(0, 0, 0))
-
-    image.save('Graficos/{}.jpg'.format(out_put_name))
 
     return()
 
 def Coordenadas_interes_receptor(Aceptores_Prot,Dadores_Prot,DF_Active_Site):
+    No_Enlista = ['HEM'] # Atomos no cubiertos
     ### Obtengo las coordenadas de los atomos de interes en el receptor
     receptor_points = pd.DataFrame(columns=['Type','Pos','Residue', 'Atom', 'X' , 'Y' , 'Z'])
     for pos in range(0,DF_Active_Site.shape[0]):
         Atomo = (DF_Active_Site.iloc[pos,2])
-        Res = (DF_Active_Site.iloc[pos,3])
-        listado = (Aceptores_Prot[Atomo])
+        if Atomo in No_Enlista:
+            pass
+        else:
+            Res = (DF_Active_Site.iloc[pos,3])
+            listado = (Aceptores_Prot[Atomo])
         if Res in listado:
             receptor_points.loc[len(receptor_points.index)] = 'Aceptor',DF_Active_Site.iloc[pos,1],DF_Active_Site.iloc[pos,2],DF_Active_Site.iloc[pos,3],DF_Active_Site.iloc[pos,4],DF_Active_Site.iloc[pos,5],DF_Active_Site.iloc[pos,6]
     for pos in range(0,DF_Active_Site.shape[0]):
         Atomo = (DF_Active_Site.iloc[pos,2])
-        Res = (DF_Active_Site.iloc[pos,3])
-        listado = (Dadores_Prot[Atomo])
+        if Atomo in No_Enlista:
+            pass
+        else:
+            Res = (DF_Active_Site.iloc[pos,3])
+            listado = (Dadores_Prot[Atomo])
         if Res in listado:
             receptor_points.loc[len(receptor_points.index)] = 'Dador',DF_Active_Site.iloc[pos,1],DF_Active_Site.iloc[pos,2],DF_Active_Site.iloc[pos,3],DF_Active_Site.iloc[pos,4],DF_Active_Site.iloc[pos,5],DF_Active_Site.iloc[pos,6]
     aa_aro = ['TYR' , 'PHE' , 'TRP']
@@ -556,7 +539,7 @@ if __name__ == '__main__':
     DF_Active_Site.to_csv('Temp/{}_Active_Site.csv'.format(str(receptor_pdb.split('.')[0])))
 
     ## Guardo como imagen ##
-    table_to_jpg('{}_Active_Site.csv'.format(str(receptor_pdb.split('.')[0])),str(receptor_pdb.split('.')[0])+'_active_site')
+    table_to_jpg(DF_Active_Site.copy(),str(receptor_pdb.split('.')[0])+'_active_site')
 
     #### Interacciones #####
     

@@ -456,6 +456,26 @@ def aromatic_angle(Anillo,anillo_recept):
     angulo_deg = np.degrees(angulo_rad)
     return(angulo_deg)
 
+def Interaccion_Especiales(DF_Interacciones,DF_Ligand,DF_Active_Site,special):
+    
+    Atom_especial = list(special.keys())
+    for at in Atom_especial:
+        Recep = (DF_Active_Site.query('Atom == @at'))
+        Point_rec = np.array(Recep[['X' , 'Y' , 'Z']])
+        Caso = (special[at])
+        for llaves in Caso:
+            resultado = DF_Ligand['Atom'].str.contains('N')
+            Sub_Set = (DF_Ligand[resultado])
+            for k in range(0,Sub_Set.shape[0]):
+                Point_lig = np.array(Sub_Set.iloc[k,[3,4,5]])
+                if (math.dist(Point_rec[0], Point_lig)) < Caso[llaves]:
+                    DF_Interacciones.loc[len(DF_Interacciones.index)]= Recep.iloc[0,1] , Recep.iloc[0,2] , Recep.iloc[0,3] , math.dist(Point_rec[0], Point_lig) , Sub_Set.iloc[k,2] ,'Especial' , '-', 'Si'
+    
+    #DF_Interacciones = DF_Interacciones.drop((DF_Interacciones['Res'] == Recep.iloc[0,3]) and (DF_Interacciones['Interaccion'] == 'No'))
+    DF_Interacciones = DF_Interacciones[~((DF_Interacciones['Res'] == 'HEM') & (DF_Interacciones['Interaccion'] == 'No'))]
+    return(DF_Interacciones)
+
+
 
 
 ######### Funciones ###########
@@ -570,6 +590,7 @@ if __name__ == '__main__':
 
     Sub_Set = (receptor_points.query('Type == @Receptor_Caso'))
 
+
     for pos in Posicion_Aceptor:
         Ligand_res = (DF_Ligand.query('Atom == @pos'))
         DF_Interacciones = Distancia_Interaccion(DF_Active_Site , Ligand_res ,DF_Interacciones,DF_Ligand,Caso_Lig,Distances_Hidrogen_Bonds,Antecesores_Aceptores)
@@ -580,12 +601,24 @@ if __name__ == '__main__':
     Receptor_Caso ='Aromatico'
     Receptor_Aromaticos = (receptor_points.query('Type == @Receptor_Caso'))
     DF_Interacciones  = Interaccion_Aromatica(Receptor_Aromaticos,Aromaticos,DF_Interacciones,DF_Ligand,DF_Active_Site)
+
+
+    ## Especiales ##
+
+    DF_Interacciones  = Interaccion_Especiales(DF_Interacciones,DF_Ligand,DF_Active_Site,Special_case)
+
     print(DF_Interacciones)
 
     ## Armo DF Final ##
     DF_Interacciones = DF_Interacciones.round(3)
     
-    DF_Interacciones.to_csv('Temp/{}_{}.csv'.format(Name_File , 'Interaccion'))  
+    DF_Interacciones.to_csv('Temp/{}_{}.csv'.format(Name_File , 'Interaccion_All'))  
 
+    Filtrado = (DF_Interacciones[DF_Interacciones['Interaccion'] == 'Si'])
+    
+    Filtrado.to_csv('Temp/{}_{}.csv'.format(Name_File , 'Interaccion'))  
+
+    table_to_jpg(Filtrado.copy(),Name_File+'_interaccion')
+    
     ##### archivo de salida resumen y chequear angulos 
     #### mejorar la parte de aromaticos query

@@ -463,7 +463,7 @@ def Interaccion_Especiales(DF_Interacciones,DF_Ligand,DF_Active_Site,special):
         Caso = (special[at])
         Recep = (DF_Active_Site.query('Atom == @Caso'))
         Point_rec = np.array(Recep[['X' , 'Y' , 'Z']])
-        if len(Point_rec[0]) > 0:
+        if len(Point_rec) > 0:
             for llaves in Caso:
                 resultado = DF_Ligand['Atom'].str.contains('N')
                 Sub_Set = (DF_Ligand[resultado])

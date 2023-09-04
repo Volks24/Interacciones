@@ -460,16 +460,17 @@ def Interaccion_Especiales(DF_Interacciones,DF_Ligand,DF_Active_Site,special):
     
     Atom_especial = list(special.keys())
     for at in Atom_especial:
-        Recep = (DF_Active_Site.query('Atom == @at'))
-        Point_rec = np.array(Recep[['X' , 'Y' , 'Z']])
         Caso = (special[at])
-        for llaves in Caso:
-            resultado = DF_Ligand['Atom'].str.contains('N')
-            Sub_Set = (DF_Ligand[resultado])
-            for k in range(0,Sub_Set.shape[0]):
-                Point_lig = np.array(Sub_Set.iloc[k,[3,4,5]])
-                if (math.dist(Point_rec[0], Point_lig)) < Caso[llaves]:
-                    DF_Interacciones.loc[len(DF_Interacciones.index)]= Recep.iloc[0,1] , Recep.iloc[0,2] , Recep.iloc[0,3] , math.dist(Point_rec[0], Point_lig) , Sub_Set.iloc[k,2] ,'Especial' , '-', 'Si'
+        Recep = (DF_Active_Site.query('Atom == @Caso'))
+        Point_rec = np.array(Recep[['X' , 'Y' , 'Z']])
+        if len(Point_rec[0]) > 0:
+            for llaves in Caso:
+                resultado = DF_Ligand['Atom'].str.contains('N')
+                Sub_Set = (DF_Ligand[resultado])
+                for k in range(0,Sub_Set.shape[0]):
+                    Point_lig = np.array(Sub_Set.iloc[k,[3,4,5]])
+                    if (math.dist(Point_rec[0], Point_lig)) < float((special[at][1])):
+                        DF_Interacciones.loc[len(DF_Interacciones.index)]= Recep.iloc[0,1] , Recep.iloc[0,2] , Recep.iloc[0,3] , math.dist(Point_rec[0], Point_lig) , Sub_Set.iloc[k,2] ,'Especial' , '-', 'Si'
     
     #DF_Interacciones = DF_Interacciones.drop((DF_Interacciones['Res'] == Recep.iloc[0,3]) and (DF_Interacciones['Interaccion'] == 'No'))
     DF_Interacciones = DF_Interacciones[~((DF_Interacciones['Res'] == 'HEM') & (DF_Interacciones['Interaccion'] == 'No'))]

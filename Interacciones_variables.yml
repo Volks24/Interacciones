@@ -1,6 +1,6 @@
 distancias:
   Distances_Hidrogen_Bonds: 3.2
-  Distances_Aromatic: 4.96
+  Distances_Aromatic: 5.5
   Distances_Hidrofobica: 6
   centroid_distance: 9
   Distances_C_Simple : 1.54
